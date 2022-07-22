@@ -110,7 +110,21 @@ def is_equal(dt,dt2):
     return False
 
 def update_versions():
-    pass
+    data = Data.objects.all()
+    versions = Version.objects.all()
+    data_vv = []
+    version_vv = []
+    for d in data:
+        if d.version.vv not in data_vv:
+            data_vv.append(d.version.vv)
+    for v in versions:
+        if v.vv not in version_vv:
+            version_vv.append(v.vv)
+    for v in version_vv:
+        if v not in data_vv:
+            version = Version.objects.get(vv=v).delete()
+    return
+
 
 @csrf_exempt
 def convert_version(request):
@@ -257,6 +271,20 @@ def delete_data_point(request):
             data_values=data.dt
             if(is_equal(data_values,values)):
                 u=1
+                sent_date = data.sent_date
+                version = data.version.vv
+                date=DateSent.objects.get(date=sent_date)
+                versions = date.versions
+                for v in  versions:
+                        if v["version"] == version:
+                            v["no"] = v["no"]-1
+                        
+                        if v["no"] == 0:
+                            versions.remove(v)
+    
+                date.noof_versions = len(versions)
+                date.versions = versions
+                date.save()
                 data.delete()
                 print("deleted.")
         if u==1:
